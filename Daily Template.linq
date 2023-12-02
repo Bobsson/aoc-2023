@@ -16,7 +16,7 @@ class Puzzle : DailyPuzzle
 
 	//public override string TestInput2 => base.TestInput2;
 
-	public override string TestAnswer2 => throw new NotImplementedException();
+	public override string TestAnswer2 => null;
 
 	public override string SolvePart1(string input)
 	{
