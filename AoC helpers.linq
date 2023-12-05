@@ -66,6 +66,7 @@ public static class AdventHelpers
 
 	// Making some frequently used operations fluent.
 	public static int ToInt(this string s) => int.Parse(s);
+	public static long ToLong(this string s) => long.Parse(s);
 	public static Match RegexMatch(this string input, string pattern) => Regex.Match(input, pattern);
 	public static Match RegexMatch(this string input, string pattern, RegexOptions options) => 	Regex.Match(input, pattern, options);
 	public static string Join<T>(this IEnumerable<T> list, string joiner) => string.Join(joiner, list);
