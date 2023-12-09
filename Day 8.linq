@@ -44,7 +44,7 @@ ZZZ = (ZZZ, ZZZ)";
 22Z = (22B, 22B)
 XXX = (XXX, XXX)";
 
-	public override string TestAnswer2 => null;
+	public override string TestAnswer2 => "6";
 
 	private record Node(string name, string left, string right);
 
@@ -61,9 +61,6 @@ XXX = (XXX, XXX)";
 	public override string SolvePart1(string input)
 	{
 		var map = ParseMap(input);//.Dump();
-		map.nodes.Count(n => n.Key[2] == 'A').Dump("A's");
-		map.nodes.Count(n => n.Key[2] == 'Z').Dump("Z's");
-		map.directions.Length.Dump("Length");
 		var current = "AAA";
 		int step = -1;
 		long distance = 0;
@@ -83,6 +80,29 @@ XXX = (XXX, XXX)";
 
 	public override string SolvePart2(string input)
 	{
-		throw new NotImplementedException();
+		var map = ParseMap(input);//.Dump();
+		var routes = new List<Route>();
+		foreach (var start in map.nodes.Keys.Where(n => n[2] == 'A'))
+		{
+			var current = start;
+			int step = -1;
+			long distance = 0;
+			while (!(current[2] == 'Z' && step == map.directions.Length - 1))
+			{
+				if (++step >= map.directions.Length) step = 0; // Wrap around
+
+				if (map.directions[step] == 'R') current = map.nodes[current].right;
+				if (map.directions[step] == 'L') current = map.nodes[current].left;
+				distance++;
+			}
+			routes.Add(new Route(start, 0, distance, current));
+		}
+		routes.Dump();
+
+		long answer = 1;
+		foreach (var r in routes) answer *= r.distance / map.directions.Length;
+		answer *= map.directions.Length;
+		//answer.Dump();
+		return answer.ToString();
 	}
 }
