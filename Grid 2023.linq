@@ -49,7 +49,12 @@ public class Grid<T> where T : struct
 		{
 			if (_grid.ContainsKey((x, y))) return _grid[(x, y)].Value;
 			else if (OOBReadBehavior == OutOfBoundsReadBehavior.Error) throw new GridException($"OOB Access");
-			else return DefaultValue;
+			else
+			{
+				var p = new Point(x, y, DefaultValue);
+				_grid.Add((x,y), p);
+				return p.Value;
+			}
 		}
 		set
 		{
@@ -76,15 +81,25 @@ public class Grid<T> where T : struct
 	
 	public IEnumerable<Point> GetAllPoints() => _grid.Values;
 	public IEnumerable<Point> GetPoints(Func<Point, bool> test) => _grid.Values.Where(test);
-	public IEnumerable<Point> GetOrthogonal(Point p) => _grid.Values.Where(v
-		=> (v.X == p.X && v.Y == p.Y + 1)
-		|| (v.X == p.X && v.Y == p.Y - 1)
-		|| (v.X == p.X + 1 && v.Y == p.Y)
-		|| (v.X == p.X - 1 && v.Y == p.Y));
+	public IEnumerable<(int x, int y)> GetOrthogonal((int x, int y) start)
+	{
+		yield return (start.x - 1, start.y);
+		yield return (start.x + 1, start.y);
+		yield return (start.x, start.y - 1);
+		yield return (start.x, start.y + 1);
+	}		
+	public IEnumerable<Point> GetOrthogonal(Point p)
+	{
+		yield return new Point(p.X, p.Y - 1, this[p.X, p.Y - 1]);
+		yield return new Point(p.X, p.Y + 1, this[p.X, p.Y + 1]);
+		yield return new Point(p.X - 1, p.Y, this[p.X - 1, p.Y]);
+		yield return new Point(p.X + 1, p.Y, this[p.X + 1, p.Y]);
+	}
 	public IEnumerable<Point> GetAdjacent(Point p) => _grid.Values.Where(v
 		=> (v.X == p.X - 1 || v.X == p.X || v.X == p.X + 1)
 		&& (v.Y == p.Y - 1 || v.Y == p.Y || v.Y == p.Y + 1)
 		&& !(v.X == p.X && v.Y == p.Y)); // Don't want to include itself
+	public Point PointAt(int x, int y) => _grid[(x,y)];
 
 
 	public virtual string Display(bool coords = false)
@@ -148,6 +163,35 @@ public class Grid<T> where T : struct
 	{
 		public GridException(string message) : base(message) { }
 	}
+	public int FloodFillOrthogonal((int x, int y) source, T fill, T? empty = null, T? fillOverflow = null)
+	{
+		if (empty == null) empty = DefaultValue;
+		if (!this[source].Equals(empty.Value)) return 0;
+		var queue = new Queue<(int x, int y)>();
+		var filled = new List<(int x, int y)>();
+		queue.Enqueue(source);
+		bool overflow = false;
+		while (queue.Count != 0)
+		{
+			var target = queue.Dequeue();
+			foreach (var a in this.GetOrthogonal(target))
+			{
+				if (a.x > this.MaxX || a.x < this.MinX || a.y > this.MaxY || a.y < this.MinY) { overflow = true; continue;}
+				if (this[a].Equals(empty.Value))
+				{
+					this[a] = fill;
+					queue.Enqueue(a);
+					filled.Add(a);
+				}
+			}
+		}
+		if (overflow)
+		{
+			if (fillOverflow != null) foreach (var a in filled) { this[a] = fillOverflow.Value; }
+			return int.MaxValue;
+		}
+		else return filled.Count;
+	}
 }
 public class IntGrid : Grid<int>
 {
@@ -161,4 +205,16 @@ public class CharGrid : Grid<char>
 	public CharGrid(string input, char defaultValue = '.') : base(defaultValue, true) { Parse(input); }
 
 	public void Parse(string input) => base.Parse(input.Split("\n").Select(i => i.Trim().ToCharArray()));
+}
+// Not used directly in the grids, but useful to have defined when working with them.
+public enum Direction
+{
+	North,
+	NorthEast,
+	East,
+	SouthEast,
+	South,
+	SouthWest,
+	West,
+	NorthWest,
 }
